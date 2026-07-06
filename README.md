@@ -20,6 +20,17 @@ This platform is a production-ready, highly modular system designed for high-per
 
 The infrastructure is split into five active components managed through a shared docker environment:
 
+```mermaid
+flowchart LR
+    U[User] <-->|HTTP · JWT| UI[Web Client<br/>Streamlit]
+    UI <-->|REST| API[API Gateway<br/>FastAPI]
+    API -->|enqueue task| R[(Redis<br/>Task Queue)]
+    R -->|dequeue task| W[Model Worker<br/>TensorFlow · ResNet50]
+    W -->|write prediction| DB[(PostgreSQL)]
+    API <-->|users · feedback| DB
+    API <-.->|shared volume| W
+```
+
 1. **API Gateway (FastAPI)**: Serves as the primary public entry point. It hosts the REST endpoints, validates JWT credentials, manages database operations via SQLAlchemy, and pushes tasks into the queue.
 2. **Model Processing Agent (TensorFlow)**: A dedicated service that monitors the Redis task queue, loads images from shared volumes, performs inference using ResNet50, and publishes the predictions.
 3. **Broker Service (Redis)**: Acts as the real-time transmission layer between the FastAPI gateway and the Tensorflow worker.
